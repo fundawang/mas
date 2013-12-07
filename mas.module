@@ -134,7 +134,7 @@ function mas_user_sms($user) {
 		);
 	}
 	if(!empty($output))
-		$output='<div id="mas-log" style="height: 400px; overflow-y:scroll;">'.$output.'</div>';
+		$output='<div id="mas-log" style="height: 400px; overflow-y:auto; overflow-x: hidden;">'.$output.'</div>';
 	drupal_add_js('jQuery(document).ready(function(){jQuery("#mas-log").scrollTop(jQuery("#mas-log")[0].scrollHeight); jQuery("#edit-content").focus();});',
 		array('type'=>'inline'));
 	$phonenumbers=module_invoke_all('get_phone_number',$user);
