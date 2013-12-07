@@ -167,6 +167,8 @@ function mas_send_sms_form($form, $form_state, $user, $phonenumbers, $appid) {
 
 function mas_send_sms_form_submit($form, $form_state) {
 	$content=trim($form_state['values']['content']);
+	if(isset($form['#contentprefix']))
+		$content=format_username($GLOBALS['user']).':'.$form['#contentprefix'].$content;
 	foreach($form['#phonenumbers'] as $phonenumber) {
 		db_insert('sms_outbox1')->fields(array(
 			'sismsid' => mt_rand(0,pow(10,10)-1),
@@ -181,6 +183,7 @@ function mas_send_sms_form_submit($form, $form_state) {
 			'FLAG' => 0
 		))->execute();
 	}
+	$content=trim($form_state['values']['content']);
 	if(strlen($content)>10)
 		$content=substr($content,0,10).'...';
 	watchdog('mas',
