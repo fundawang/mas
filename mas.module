@@ -139,13 +139,13 @@ function mas_user_sms($user) {
 		array('type'=>'inline'));
 	$phonenumbers=module_invoke_all('get_phone_number',$user);
 	if(!empty($phonenumbers))
-		$output.=drupal_render(drupal_get_form('mas_send_sms_form', $user, $phonenumbers, $appdigest));
+		$output.=drupal_render(drupal_get_form('mas_send_sms_form', $user, $phonenumbers[0], $appdigest));
 	return $output;
 }
 
 function mas_send_sms_form($form, $form_state, $user, $phonenumbers, $appid) {
 	$form['#user']=$user;
-	$form['#phonenumbers']=$phonenumbers;
+	$form['#phonenumbers']=array_values($phonenumbers);
 	$form['#appid']=$appid;
 	$form['content']=array(
 		'#type' => 'textfield',
@@ -161,12 +161,13 @@ function mas_send_sms_form($form, $form_state, $user, $phonenumbers, $appid) {
 }
 
 function mas_send_sms_form_submit($form, $form_state) {
+	$content=trim($form_state['values']['content']);
 	foreach($form['#phonenumbers'] as $phonenumber) {
 		db_insert('sms_outbox1')->fields(array(
 			'sismsid' => mt_rand(0,pow(10,10)-1),
 			'EXTCODE' => variable_get('mas_extcode'),
 			'DESTADDR' => $phonenumber,
-			'MESSAGECONTENT' => trim($form_state['values']['content']),
+			'MESSAGECONTENT' => $content,
 			'REQDELIVERYREPORT' => 1,
 			'MSGFMT' => 16,
 			'SENDMETHOD' => 1,
@@ -175,10 +176,13 @@ function mas_send_sms_form_submit($form, $form_state) {
 			'FLAG' => 0
 		))->execute();
 	}
+	if(strlen($content)>10)
+		$content=substr($content,0,10).'...';
 	watchdog('mas',
 		'Sent message !content to !user.',
-		array('!content'=>trim($form_state['values']['content']), '!user'=>$form['#user']),
-		WATCHDOG_DEBUG
+		array('!content'=>$content, '!user'=>format_username($form['#user'])),
+		WATCHDOG_DEBUG,
+		l(t('View'), 'user/'.$form['#user']->uid.'/sms')
 	);
 	drupal_set_message(t('Message Request Sent.'));
 }
