@@ -32,6 +32,7 @@ function mas_menu() {
 		'title' => 'Short Messenger Service',
 		'description' => 'SMS communication log',
 		'access callback' => 'mas_user_sms_access',
+		'access arguments' => array(1),
 		'page callback' => 'mas_user_sms',
 		'page arguments' => array(1),
 	);
@@ -94,8 +95,12 @@ function mas_admin_form_submit($form, $form_state) {
 	}
 }
 
-function mas_user_sms_access() {
-	return user_access('send sms');
+function mas_user_sms_access($user) {
+	if(user_access('send sms')) {
+		$phonenumbers=module_invoke_all('get_phone_number',$user);
+		if(empty($phonenumbers)) return FALSE;
+		else return TRUE;
+	} else return FALSE;
 }
 
 function mas_user_sms($user) {
