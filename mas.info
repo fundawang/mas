@@ -1,0 +1,6 @@
+name = MAS
+description = Provides MAS (SiTech) interface for drupal
+package = Messaging
+core = 7.x
+
+version = "7.x-0.1"

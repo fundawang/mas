@@ -1,0 +1,139 @@
+<?php
+
+/*
+ * This file is licensed under GPLv2+.
+*/
+require_once('mas.inc');
+
+/**
+ * @file
+ * Provides MAS(SciTech) interface for drupal.
+ */
+
+function mas_permission() {
+	return array(
+		'send sms' => array(
+			'title' => t('Send SMS to others'),
+		),
+	);
+}
+
+function mas_menu() {
+	$items['admin/config/services/mas'] = array(
+		'title' => 'mas settings',
+		'description' => 'various mas settings.',
+		'access callback' => 'user_access',
+		'access arguments' => array('access administration pages'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('mas_admin_form'),
+	);
+	$items['user/%user/sms'] = array(
+		'type' => MENU_LOCAL_TASK,
+		'title' => 'Short Messenger Service',
+		'description' => 'SMS communication log',
+		'access callback' => 'mas_user_sms_access',
+		'page callback' => 'mas_user_sms',
+		'page arguments' => array(1),
+	);
+	return $items;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function mas_uninstall() {
+	$settings=array(
+		'code', 'extcode', 'applicationid'
+	);
+	foreach($settings as $s) {
+		variable_del('mas_'.$s);
+	}
+}
+
+function mas_admin_form($form, $form_state) {
+	$form=array(
+		'#submit' => array('mas_admin_form_submit'),
+		'#validate' => array('mas_admin_form_validate'),
+	);
+	$form['code'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Mas Group Number on sending'),
+		'#description' => t('The leading number of sender.'),
+		'#default_value' => variable_get('mas_code'),
+		'#maxlength' => 12,
+		'#size' => 40,
+		'#required' => TRUE,
+	);
+	$form['extcode'] = array(
+		'#type' => 'textfield',
+		'#title' => t('ExtCode'),
+		'#description' => t('The number after leading number of sender.'),
+		'#default_value' => variable_get('mas_extcode'),
+		'#required' => TRUE,
+		'#maxlength' => 4,
+		'#size' => 40,
+	);
+	return system_settings_form($form);
+}
+
+function mas_admin_form_validate($form, $form_state) {
+	if(preg_match('@^106[0-9]{9}$@', $form_state['values']['code']) !== 1) {
+		form_set_error('code', t('The @field you have entered is not valid.',array('@field' => t('Mas Number on sending'))));
+	}
+	if(preg_match('@^[0-9]{1,4}$@', $form_state['values']['extcode']) !== 1) {
+		form_set_error('extcode', t('The @field you have entered is not valid.',array('@field' => t('ExtCode'))));
+	}
+}
+
+function mas_admin_form_submit($form, $form_state) {
+	$settings=array(
+		'code', 'extcode', 'applicationid'
+	);
+	foreach($settings as $s) {
+		variable_set('mas_'.$s,trim($form_state['values'][$s]));
+	}
+}
+
+function mas_user_sms_access() {
+	return user_access('send sms');
+}
+
+function mas_user_sms($user) {
+	$host=$_SERVER['HTTP_HOST'];
+	$appdigest=substr(md5($_SERVER['SERVER_ADDR'].$_SERVER['REQUEST_URI']),8,16); 
+	$query=db_query('SELECT EXISTS(SELECT * FROM {sms_inbox1} inbox INNER JOIN {sms_sent1} sentbox ON '.
+		'inbox.SOURCEADDR=sentbox.DESTADDR AND inbox.EXTCODE=sentbox.EXTCODE '.
+		'WHERE inbox.EXTCODE=:extcode AND sentbox.SENTRESULT=1 AND sentbox.APPLICATIONID=:appid)',
+		array(':extcode'=>variable_get('mas_extcode'), ':appid'=>$appdigest));
+	$r=$query->fetchField();
+	if($r) {
+		$query=db_query('SELECT DESTADDR FROM {sms_sent1} WHERE APPLICATIONID=:appid', array(':appid'=>$appdigest));
+		foreach($query as $r) {
+			db_update('sms_inbox1')->condition('APPLICATIONID','')->condition('SOURCEADDR',$r->DESTADDR)->fields(array(
+				'APPLICATIONID' => $appdigest
+			))->execute();
+		}
+	}
+	
+	$query=db_query('SELECT * FROM ('.
+		'(SELECT 1 AS direction, RECEIVETIME as timestamp, RECEIVETIME as processtime, MESSAGECONTENT as content, 1 as status '.
+			'FROM {sms_inbox1} inbox WHERE inbox.APPLICATIONID=:appid) UNION ALL '.
+		'(SELECT 2 AS direction, sent.SENTTIME as timestamp, outbox.REQUESTTIME as processtime, outbox.MESSAGECONTENT as content, sent.SENTRESULT as status '.
+			'FROM {sms_sent1} sent RIGHT JOIN {sms_outbox1} outbox ON sent.sismsid=outbox.sismsid '.
+			'WHERE outbox.APPLICATIONID=:appid) '.
+			') combine ORDER BY processtime',
+		array(':appid'=>$appdigest));
+	drupal_add_css(drupal_get_path('module','mas').'/mas.css');
+	$output='';
+	foreach($query as $r) {
+		$output .=sprintf('<div class="%s"><div class="mas-content %s">%s</div><div class="mas-status">%s</div></div>',
+			$r->direction==1?'mas-log-upgoing':'mas-log-downgoing',
+			$r->status==1?'':'error',
+			$r->content,
+			empty($r->timestamp)||$r->status!=1?$r->processtime.sprintf(' (%s)', t('Sent Failed')):$r->timestamp
+		);
+	}
+	return $output;
+}
+
+?>

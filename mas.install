@@ -1,0 +1,77 @@
+<?php
+
+/*
+ * This file is licensed under GPLv2+.
+*/
+
+/**
+ * @file
+ * Install, update and uninstall functions for the mas module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function mas_schema() {
+	$schema['sms_outbox1'] = array(
+		'fields' => array(
+			'sismsid' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
+			'EXTCODE' => array('type' => 'varchar', 'length' => '21', 'not null' => FALSE),
+			'DESTADDR' => array('type' => 'varchar', 'length' => '2000', 'not null' => TRUE),
+			'MESSAGECONTENT' => array('type' => 'varchar', 'length' => '2000', 'not null' => TRUE),
+			'REQDELIVERYREPORT' => array('type' => 'int', 'not null' => TRUE),
+			'MSGFMT' => array('type' => 'int', 'not null' => TRUE),
+			'SENDMETHOD' => array('type' => 'int', 'not null' => TRUE),
+			'REQUESTTIME' => array('type'=> 'varchar', 'mysql_type' => 'datetime', 'not null' => TRUE),
+			'APPLICATIONID' => array('type' => 'varchar', 'length' => '16', 'not null' => TRUE),
+			'FLAG' => array('type' => 'int', 'not null' => TRUE,'default' => 0),
+		),
+		'primary key' => array('sismsid'),
+	);
+	$schema['sms_inbox1'] = array(
+		'fields' => array(
+			'MASSMSID' => array('type' => 'int', 'not null' => TRUE),
+			'EXTCODE' => array('type' => 'varchar', 'length' => '21', 'not null' => FALSE),
+			'SOURCEADDR' => array('type' => 'varchar', 'length' => '21', 'not null' => TRUE),
+			'RECEIVETIME' => array('type'=> 'varchar', 'mysql_type' => 'datetime', 'not null' => TRUE),
+			'MESSAGECONTENT' => array('type' => 'varchar', 'length' => '400', 'not null' => TRUE),
+			'MSGFMT' => array('type' => 'int', 'not null' => TRUE),
+			'REQUESTTIME' => array('type'=> 'varchar', 'mysql_type' => 'datetime', 'not null' => TRUE),
+			'APPLICATIONID' => array('type' => 'varchar', 'length' => '16', 'not null' => TRUE),
+			'ECID' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
+		),
+		'primary key' => array('MASSMSID'),
+	);
+	$schema['sms_sent1'] = array(
+		'fields' => array(
+			'MASSMSID' => array('type' => 'varchar', 'length' => '50', 'not null' => FALSE),
+			'GWSMSID' => array('type' => 'varchar', 'length' => '50', 'not null' => FALSE),
+			'SISMSID' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
+			'EXTCODE' => array('type' => 'varchar', 'length' => '21', 'not null' => FALSE),
+			'DESTADDR' => array('type' => 'varchar', 'length' => '21', 'not null' => TRUE),
+			'REQUESTTIME' => array('type'=> 'varchar', 'mysql_type' => 'datetime', 'not null' => FALSE),
+			'SENTTIME' => array('type'=> 'varchar', 'mysql_type' => 'datetime', 'not null' => TRUE),
+			'SENTRESULT' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'SMSSTATUS' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
+			'STATUSTIME' => array('type'=> 'varchar', 'mysql_type' => 'datetime', 'not null' => FALSE),
+			'APPLICATIONID' => array('type' => 'varchar', 'length' => '16', 'not null' => TRUE),
+			'ECID' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
+		),
+		'primary key' => array('SISMSID'),
+	);
+	return $schema;
+}
+
+function mas_update_7000() {
+	if(db_table_exists('sms_outbox1')) db_drop_table('sms_outbox1');
+	$schemas=drupal_get_schema_unprocessed('mas','sms_outbox1');
+	db_create_table('sms_outbox1', $schemas);
+
+	if(db_table_exists('sms_inbox1')) db_drop_table('sms_inbox1');
+	$schemas=drupal_get_schema_unprocessed('mas','sms_inbox1');
+	db_create_table('sms_inbox1', $schemas);
+
+	if(db_table_exists('sms_sent1')) db_drop_table('sms_sent1');
+	$schemas=drupal_get_schema_unprocessed('mas','sms_sent1');
+	db_create_table('sms_sent1', $schemas);
+}
