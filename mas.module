@@ -194,15 +194,16 @@ function mas_send_sms_form_submit($form, $form_state) {
 }
 
 function mas_user_view($user, $view_mode, $langcode) {
-	$phonenumbers=module_invoke_all('get_phone_number',$user);
-	if(empty($phonenumbers)) return;
-	$appdigest=substr(md5($_SERVER['SERVER_ADDR'].'/user/'.$user->uid.'/sms'),8,16); 
-	$user->content['mas']['#weight']=9;
-	$user->content['mas']['send']=array(
-		'#type' => 'user_profile_item',
-		'#title' => t('Send SMS'),
-		'#markup' => drupal_render(drupal_get_form('mas_send_sms_form', $user, $phonenumbers[0], $appdigest)),
-	);
+	if(mas_user_sms_access($user)) {
+		$phonenumbers=module_invoke_all('get_phone_number',$user);
+		$appdigest=substr(md5($_SERVER['SERVER_ADDR'].'/user/'.$user->uid.'/sms'),8,16); 
+		$user->content['mas']['#weight']=9;
+		$user->content['mas']['send']=array(
+			'#type' => 'user_profile_item',
+			'#title' => t('Short Messenger Service'),
+			'#markup' => drupal_render(drupal_get_form('mas_send_sms_form', $user, $phonenumbers[0], $appdigest)),
+		);
+	}
 }
 
 ?>
