@@ -185,7 +185,7 @@ function mas_send_sms_form_submit($form, $form_state) {
 	}
 	$content=trim($form_state['values']['content']);
 	if(strlen($content)>10)
-		$content=substr($content,0,10).'...';
+		$content=mb_substr($content,0,10,'UTF-8').'...';
 	watchdog('mas',
 		'Sent message !content to !user.',
 		array('!content'=>$content, '!user'=>format_username($form['#user'])),
