@@ -170,18 +170,21 @@ function mas_send_sms_form_submit($form, $form_state) {
 	if(isset($form['#contentprefix']))
 		$content=format_username($GLOBALS['user']).': '.$form['#contentprefix'].$content;
 	foreach($form['#phonenumbers'] as $phonenumber) {
-		db_insert('sms_outbox1')->fields(array(
-			'sismsid' => mt_rand(0,pow(10,10)-1),
-			'EXTCODE' => variable_get('mas_extcode'),
-			'DESTADDR' => $phonenumber,
-			'MESSAGECONTENT' => $content,
-			'REQDELIVERYREPORT' => 1,
-			'MSGFMT' => 16,
-			'SENDMETHOD' => 1,
-			'REQUESTTIME' => strftime('%Y-%m-%d %H:%M:%S'),
-			'APPLICATIONID' => $form['#appid'],
-			'FLAG' => 0
-		))->execute();
+		try {
+			db_insert('sms_outbox1')->fields(array(
+				'sismsid' => mt_rand(0,pow(10,10)-1),
+				'EXTCODE' => variable_get('mas_extcode'),
+				'DESTADDR' => $phonenumber,
+				'MESSAGECONTENT' => $content,
+				'REQDELIVERYREPORT' => 1,
+				'MSGFMT' => 16,
+				'SENDMETHOD' => 1,
+				'REQUESTTIME' => strftime('%Y-%m-%d %H:%M:%S'),
+				'APPLICATIONID' => $form['#appid'],
+				'FLAG' => 0
+			))->execute();
+		} catch (Exception $e) {
+		}
 	}
 	$content=trim($form_state['values']['content']);
 	if(strlen($content)>30)
