@@ -170,6 +170,8 @@ function mas_send_sms_form_submit($form, $form_state) {
 	if(isset($form['#contentprefix']))
 		$content=format_username($GLOBALS['user']).': '.$form['#contentprefix'].$content;
 	foreach($form['#phonenumbers'] as $phonenumber) {
+		$phonenumber=trim($phonenumber);
+		if(preg_match('/^\d{11}$/', $phonenumber))
 		try {
 			db_insert('sms_outbox1')->fields(array(
 				'sismsid' => mt_rand(0,pow(10,10)-1),
