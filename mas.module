@@ -99,13 +99,7 @@ function mas_user_sms_access($user) {
 	if(user_access('send sms')) {
 		$phonenumbers=module_invoke_all('get_phone_number',$user);
 		if(empty($phonenumbers)) return FALSE;
-		else {
-			$url=sprintf('http://tcc.taobao.com/cc/json/mobile_tel_segment.htm?tel=%s', $phonenumbers[0][0]);
-			$response=drupal_http_request($url);
-			preg_match("/catName:\'([^\']+)\'/", $response->data, $a);
-			$a[1]=mb_convert_encoding($a[1], 'UTF-8', 'GBK');
-			return $a[1]==t('China Mobile');
-		}
+		return TRUE;
 	} else return FALSE;
 }
 
