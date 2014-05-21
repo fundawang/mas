@@ -133,9 +133,9 @@ function mas_user_sms($user) {
 	foreach($query as $r) {
 		$output .=sprintf('<div class="%s"><div class="mas-content %s">%s</div><div class="mas-status">%s</div></div>',
 			$r->direction==1?'mas-log-upgoing':'mas-log-downgoing',
-			(empty($r->status)||$r->status==1)?'':'error',
-			(empty($r->status)?t('Sending: '):'').$r->content,
-			empty($r->status)?t('Sending'):($r->status!=1?($r->processtime.sprintf(' (%s)', t('Sent Failed'))):$r->timestamp)
+			($r->status==''||$r->status==1)?'':'mas-error',
+			($r->status==''?t('Sending: '):'').$r->content,
+			$r->status==''?t('Sending'):($r->status!=1?($r->processtime.sprintf(' (%s)', t('Sent Failed'))):$r->timestamp)
 		);
 	}
 	if(!empty($output))

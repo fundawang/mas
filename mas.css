@@ -60,5 +60,5 @@ div.mas-log-downgoing > div.mas-content:after {
 	border-color:transparent #aedc42;
 }
 
-div.mas-log-downgoing > div.mas-content.error {background:red;}
-div.mas-log-downgoing > div.mas-content.error:after {border-color:transparent red;}
+div.mas-log-downgoing > div.mas-content.mas-error {background:red;}
+div.mas-log-downgoing > div.mas-content.mas-error:after {border-color:transparent red;}
